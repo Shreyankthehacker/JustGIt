@@ -1,0 +1,302 @@
+// naive algo
+
+// search.h
+#ifndef SEARCH_H
+#define SEARCH_H
+
+#include <string>
+void search(std::string& pat, std::string& txt);
+
+#endif
+
+
+
+// search.cpp
+#include "search.h"
+#include <iostream>
+
+void search(std::string& pat, std::string& txt) {
+    int M = pat.size();
+    int N = txt.size();
+
+    for (int i = 0; i <= N - M; i++) {
+        int j;
+        for (j = 0; j < M; j++) {
+            if (txt[i + j] != pat[j]) {
+                break;
+            }
+        }
+        if (j == M) {
+            std::cout << "Pattern found at index " << i << std::endl;
+        }
+    }
+}
+
+
+
+
+// main.cpp
+#include <iostream>
+#include <string>
+#include "search.h"
+
+int main() {
+    std::string txt1 = "AABAACAADAABAABA";
+    std::string pat1 = "AABA";
+    std::cout << "Example 1: " << std::endl;
+    search(pat1, txt1);
+
+    std::string txt2 = "agd";
+    std::string pat2 = "g";
+    std::cout << "\nExample 2: " << std::endl;
+    search(pat2, txt2);
+
+    return 0;
+}
+
+
+
+
+
+
+//kmp
+
+
+// main.cpp
+
+#include "kmp.h"
+#include <iostream>
+
+int main() {
+    std::string txt = "aabaacaadaabaaba";
+    std::string pat = "aaba";
+
+    std::vector<int> res = search(pat, txt);
+    for (int i = 0; i < res.size(); i++)
+        std::cout << res[i] << " ";
+
+    return 0;
+}
+
+
+// kmp.h
+
+#ifndef KMP_H
+#define KMP_H
+
+#include <vector>
+#include <string>
+
+void constructLps(std::string &pat, std::vector<int> &lps);
+std::vector<int> search(std::string &pat, std::string &txt);
+
+#endif
+
+
+
+// kmp.cpp
+
+#include "kmp.h"
+
+void constructLps(std::string &pat, std::vector<int> &lps) {
+    int len = 0;
+    lps[0] = 0;
+    int i = 1;
+
+    while (i < pat.length()) {
+        if (pat[i] == pat[len]) {
+            len++;
+            lps[i] = len;
+            i++;
+        } else {
+            if (len != 0)
+                len = lps[len - 1];
+            else {
+                lps[i] = 0;
+                i++;
+            }
+        }
+    }
+}
+
+std::vector<int> search(std::string &pat, std::string &txt) {
+    int n = txt.length();
+    int m = pat.length();
+    std::vector<int> lps(m);
+    std::vector<int> res;
+
+    constructLps(pat, lps);
+    int i = 0, j = 0;
+
+    while (i < n) {
+        if (txt[i] == pat[j]) {
+            i++;
+            j++;
+            if (j == m) {
+                res.push_back(i - j);
+                j = lps[j - 1];
+            }
+        } else {
+            if (j != 0)
+                j = lps[j - 1];
+            else
+                i++;
+        }
+    }
+    return res;
+}
+
+
+
+// rabin karp
+
+
+// main.cpp
+
+
+#include "rabin_karp.h"
+
+int main()
+{
+    std::string txt = "GEEKS FOR GEEKS";
+    std::string pat = "GEEK";
+
+    int q = INT_MAX;  // A large prime to reduce collisions
+    search(pat, txt, q);
+
+    return 0;
+}
+
+
+
+//rabin_karp.h
+#ifndef RABIN_KARP_H
+#define RABIN_KARP_H
+
+#include <string>
+#include <climits>
+
+void search(std::string pat, std::string txt, int q);
+
+#endif
+
+
+// rabin_karp.cpp
+
+#include "rabin_karp.h"
+#include <iostream>
+
+void search(std::string pat, std::string txt, int q)
+{
+    int M = pat.size();
+    int N = txt.size();
+    int i, j;
+    int p = 0; // hash value for pattern
+    int t = 0; // hash value for txt
+    int h = 1;
+    int d = 256; // number of characters in input alphabet
+
+    // Calculate h = pow(d, M-1) % q
+    for (i = 0; i < M - 1; i++)
+        h = (h * d) % q;
+
+    // Calculate the hash value of pattern and first window
+    for (i = 0; i < M; i++) {
+        p = (d * p + pat[i]) % q;
+        t = (d * t + txt[i]) % q;
+    }
+
+    // Slide the pattern over text
+    for (i = 0; i <= N - M; i++) {
+        if (p == t) {
+            for (j = 0; j < M; j++) {
+                if (txt[i + j] != pat[j])
+                    break;
+            }
+
+            if (j == M)
+                std::cout << "Pattern found at index " << i << std::endl;
+        }
+
+        if (i < N - M) {
+            t = (d * (t - txt[i] * h) + txt[i + M]) % q;
+
+            if (t < 0)
+                t += q;
+        }
+    }
+}
+
+
+
+// boyer more
+
+
+
+// boyermoore.h
+#ifndef BOYERMOORE_H
+#define BOYERMOORE_H
+
+#include <string>
+
+const int NO_OF_CHARS = 256;
+
+void badCharHeuristic(const std::string& str, int size, int badchar[NO_OF_CHARS]);
+void search(const std::string& txt, const std::string& pat);
+
+#endif
+
+
+
+
+// boyermoore.cpp
+#include "boyermoore.h"
+#include <iostream>
+#include <algorithm>
+
+void badCharHeuristic(const std::string& str, int size, int badchar[NO_OF_CHARS]) {
+    for (int i = 0; i < NO_OF_CHARS; i++)
+        badchar[i] = -1;
+
+    for (int i = 0; i < size; i++)
+        badchar[(int)str[i]] = i;
+}
+
+void search(const std::string& txt, const std::string& pat) {
+    int m = pat.size();
+    int n = txt.size();
+    int badchar[NO_OF_CHARS];
+
+    badCharHeuristic(pat, m, badchar);
+
+    int s = 0;
+    while (s <= (n - m)) {
+        int j = m - 1;
+
+        while (j >= 0 && pat[j] == txt[s + j])
+            j--;
+
+        if (j < 0) {
+            std::cout << "Pattern occurs at shift = " << s << std::endl;
+            s += (s + m < n) ? m - badchar[txt[s + m]] : 1;
+        } else {
+            s += std::max(1, j - badchar[txt[s + j]]);
+        }
+    }
+}
+
+
+
+
+// main.cpp
+#include "boyermoore.h"
+#include <iostream>
+
+int main() {
+    std::string txt = "ABAAABCD";
+    std::string pat = "ABC";
+    search(txt, pat);
+    return 0;
+}
+
+

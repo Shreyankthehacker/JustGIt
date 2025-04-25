@@ -1,0 +1,316 @@
+/*============================= PRIM'S ALGORITHM =============================*/
+
+// prim_header.h
+#ifndef PRIM_H
+#define PRIM_H
+#include <vector>
+#include <queue>
+#include <utility>
+#include <climits>
+int primMST(int V, std::vector<std::pair<int, int>> adj[]);
+#endif
+
+// prim_main.cpp
+#include "prim_header.h"
+int primMST(int V, std::vector<std::pair<int, int>> adj[]) {
+    std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>, std::greater<>> pq;
+    std::vector<int> key(V, INT_MAX), inMST(V, false);
+    key[0] = 0;
+    pq.push({0, 0});
+    int cost = 0;
+    while (!pq.empty()) {
+        int u = pq.top().second;
+        pq.pop();
+        if (inMST[u]) continue;
+        inMST[u] = true;
+        cost += key[u];
+        for (auto [v, w] : adj[u]) {
+            if (!inMST[v] && w < key[v]) {
+                key[v] = w;
+                pq.push({w, v});
+            }
+        }
+    }
+    return cost;
+}
+
+// prim_driver.cpp
+#include <iostream>
+#include "prim_header.h"
+int main_prim() {
+    int V = 5;
+    std::vector<std::pair<int, int>> adj[V];
+    adj[0].push_back({1, 2});
+    adj[0].push_back({3, 6});
+    adj[1].push_back({0, 2});
+    adj[1].push_back({2, 3});
+    adj[1].push_back({3, 8});
+    adj[1].push_back({4, 5});
+    adj[2].push_back({1, 3});
+    adj[2].push_back({4, 7});
+    adj[3].push_back({0, 6});
+    adj[3].push_back({1, 8});
+    adj[4].push_back({1, 5});
+    adj[4].push_back({2, 7});
+    std::cout << "Prim's MST Cost: " << primMST(V, adj) << std::endl;
+    return 0;
+}
+
+/*============================= KRUSKAL'S ALGORITHM =============================*/
+
+// kruskal_header.h
+#ifndef KRUSKAL_H
+#define KRUSKAL_H
+#include <vector>
+struct Edge {
+    int u, v, weight;
+    bool operator<(const Edge& other) const;
+};
+int kruskal(int V, std::vector<Edge>& edges);
+#endif
+
+// kruskal_main.cpp
+#include "kruskal_header.h"
+#include <algorithm>
+bool Edge::operator<(const Edge& other) const {
+    return weight < other.weight;
+}
+int find(int u, std::vector<int>& parent) {
+    if (u != parent[u]) parent[u] = find(parent[u], parent);
+    return parent[u];
+}
+void unionSets(int a, int b, std::vector<int>& parent, std::vector<int>& rank) {
+    a = find(a, parent); b = find(b, parent);
+    if (a != b) {
+        if (rank[a] < rank[b]) std::swap(a, b);
+        parent[b] = a;
+        if (rank[a] == rank[b]) rank[a]++;
+    }
+}
+int kruskal(int V, std::vector<Edge>& edges) {
+    std::sort(edges.begin(), edges.end());
+    std::vector<int> parent(V), rank(V, 0);
+    for (int i = 0; i < V; ++i) parent[i] = i;
+    int mst_cost = 0;
+    for (auto& e : edges) {
+        if (find(e.u, parent) != find(e.v, parent)) {
+            mst_cost += e.weight;
+            unionSets(e.u, e.v, parent, rank);
+        }
+    }
+    return mst_cost;
+}
+
+// kruskal_driver.cpp
+#include <iostream>
+#include "kruskal_header.h"
+int main_kruskal() {
+    int V = 4;
+    std::vector<Edge> edges = {
+        {0, 1, 10}, {0, 2, 6}, {0, 3, 5}, {1, 3, 15}, {2, 3, 4}
+    };
+    std::cout << "Kruskal's MST Cost: " << kruskal(V, edges) << std::endl;
+    return 0;
+}
+
+/*============================= 0/1 KNAPSACK PROBLEM =============================*/
+
+// knapsack_header.h
+#ifndef KNAPSACK_H
+#define KNAPSACK_H
+int knapsack(int W, int wt[], int val[], int n);
+#endif
+
+// knapsack_main.cpp
+#include "knapsack_header.h"
+int knapsack(int W, int wt[], int val[], int n) {
+    int dp[n+1][W+1];
+    for (int i = 0; i <= n; i++) {
+        for (int w = 0; w <= W; w++) {
+            if (i == 0 || w == 0) dp[i][w] = 0;
+            else if (wt[i-1] <= w)
+                dp[i][w] = std::max(val[i-1] + dp[i-1][w-wt[i-1]], dp[i-1][w]);
+            else
+                dp[i][w] = dp[i-1][w];
+        }
+    }
+    return dp[n][W];
+}
+
+// knapsack_driver.cpp
+#include <iostream>
+#include "knapsack_header.h"
+int main_knapsack() {
+    int val[] = {60, 100, 120};
+    int wt[] = {10, 20, 30};
+    int W = 50;
+    int n = sizeof(val) / sizeof(val[0]);
+    std::cout << "Maximum value in Knapsack = " << knapsack(W, wt, val, n) << std::endl;
+    return 0;
+}
+
+/*============================= FRACTIONAL KNAPSACK PROBLEM =============================*/
+
+// fractional_knapsack_header.h
+#ifndef FRACTIONAL_KNAPSACK_H
+#define FRACTIONAL_KNAPSACK_H
+#include <vector>
+#include <algorithm>
+struct Item {
+    int weight, value;
+    double ratio;
+    bool operator<(const Item& other) const {
+        return ratio > other.ratio;
+    }
+};
+double fractionalKnapsack(int W, std::vector<Item>& items);
+#endif
+
+// fractional_knapsack_main.cpp
+#include "fractional_knapsack_header.h"
+double fractionalKnapsack(int W, std::vector<Item>& items) {
+    double maxValue = 0.0;
+    std::sort(items.begin(), items.end());
+    for (auto& item : items) {
+        if (W >= item.weight) {
+            W -= item.weight;
+            maxValue += item.value;
+        } else {
+            maxValue += item.value * ((double) W / item.weight);
+            break;
+        }
+    }
+    return maxValue;
+}
+
+// fractional_knapsack_driver.cpp
+#include <iostream>
+#include "fractional_knapsack_header.h"
+int main_fractional_knapsack() {
+    std::vector<Item> items = {{60, 100, 1.0}, {20, 5, 0.25}, {100, 120, 1.2}};
+    int W = 50;
+    std::cout << "Maximum value in Fractional Knapsack = " << fractionalKnapsack(W, items) << std::endl;
+    return 0;
+}
+
+/*============================= MATRIX CHAIN MULTIPLICATION =============================*/
+
+// matrix_chain_header.h
+#ifndef MATRIX_CHAIN_H
+#define MATRIX_CHAIN_H
+int matrixChainOrder(int p[], int n);
+#endif
+
+// matrix_chain_main.cpp
+#include "matrix_chain_header.h"
+int matrixChainOrder(int p[], int n) {
+    int dp[n][n];
+    for (int i = 1; i < n; i++) dp[i][i] = 0;
+    for (int len = 2; len < n; len++) {
+        for (int i = 1; i < n - len + 1; i++) {
+            int j = i + len - 1;
+            dp[i][j] = INT_MAX;
+            for (int k = i; k < j; k++) {
+                dp[i][j] = std::min(dp[i][j], dp[i][k] + dp[k+1][j] + p[i-1]*p[k]*p[j]);
+            }
+        }
+    }
+    return dp[1][n-1];
+}
+
+// matrix_chain_driver.cpp
+#include <iostream>
+#include "matrix_chain_header.h"
+int main_matrix_chain() {
+    int arr[] = {1, 2, 3, 4};
+    int n = sizeof(arr) / sizeof(arr[0]);
+    std::cout << "Minimum number of multiplications: " << matrixChainOrder(arr, n) << std::endl;
+    return 0;
+}
+
+/*============================= TRAVELLING SALESMAN PROBLEM =============================*/
+
+// tsp_header.h
+#ifndef TSP_H
+#define TSP_H
+#include <vector>
+#include <climits>
+int tsp(std::vector<std::vector<int>>& dist, int n);
+#endif
+
+// tsp_main.cpp
+#include "tsp_header.h"
+int tsp(std::vector<std::vector<int>>& dist, int n) {
+    std::vector<int> dp(1 << n, INT_MAX);
+    dp[0] = 0;
+    for (int mask = 0; mask < (1 << n); ++mask) {
+        for (int u = 0; u < n; ++u) {
+            if (mask & (1 << u)) continue;
+            for (int v = 0; v < n; ++v) {
+                if (mask & (1 << v)) continue;
+                dp[mask | (1 << v)] = std::min(dp[mask | (1 << v)], dp[mask] + dist[u][v]);
+            }
+        }
+    }
+    return dp[(1 << n) - 1];
+}
+
+// tsp_driver.cpp
+#include <iostream>
+#include "tsp_header.h"
+int main_tsp() {
+    std::vector<std::vector<int>> dist = {{0, 10, 15}, {10, 0, 35}, {15, 35, 0}};
+    int n = dist.size();
+    std::cout << "Minimum distance: " << tsp(dist, n) << std::endl;
+    return 0;
+}
+
+/*============================= N-QUEEN PROBLEM =============================*/
+
+
+// nqueen_header.h
+#ifndef NQUEEN_H
+#define NQUEEN_H
+#include <vector>
+bool solveNQueens(std::vector<std::vector<int>>& board, int row);
+void printBoard(const std::vector<std::vector<int>>& board);
+#endif
+
+// nqueen_main.cpp
+#include "nqueen_header.h"
+bool isSafe(const std::vector<std::vector<int>>& board, int row, int col) {
+    for (int i = 0; i < row; i++) if (board[i][col] == 1) return false;
+    for (int i = row, j = col; i >= 0 && j >= 0; i--, j--) if (board[i][j] == 1) return false;
+    for (int i = row, j = col; i >= 0 && j < board.size(); i--, j++) if (board[i][j] == 1) return false;
+    return true;
+}
+
+bool solveNQueens(std::vector<std::vector<int>>& board, int row) {
+    if (row == board.size()) return true;
+    for (int col = 0; col < board.size(); col++) {
+        if (isSafe(board, row, col)) {
+            board[row][col] = 1;
+            if (solveNQueens(board, row + 1)) return true;
+            board[row][col] = 0;
+        }
+    }
+    return false;
+}
+
+void printBoard(const std::vector<std::vector<int>>& board) {
+    for (const auto& row : board) {
+        for (int cell : row) std::cout << (cell ? "Q" : ".") << " ";
+        std::cout << std::endl;
+    }
+}
+
+// nqueen_driver.cpp
+#include <iostream>
+#include "nqueen_header.h"
+int main_nqueen() {
+    int N = 4;
+    std::vector<std::vector<int>> board(N, std::vector<int>(N, 0));
+    if (solveNQueens(board, 0)) printBoard(board);
+    else std::cout << "Solution does not exist\n";
+    return 0;
+}
